@@ -53,4 +53,13 @@ router.post('/login', (req, res, next) => {
   })(req, res, next)
 })
 
+router.get('/logout', (req, res) => {
+	req.logout()
+	res.status(200).send({
+    data: null,
+    message: 'Logged Out',
+    status: 'success'
+  })
+})
+
 export default router
