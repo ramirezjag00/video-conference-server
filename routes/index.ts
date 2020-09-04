@@ -12,7 +12,7 @@ router.post('/register', (req, res, next) => {
 	const newUser: UserType = new User({ username, mobile_token })
 	User.register(newUser, (password as string), (error: Error) => {
 		if (error) {
-			return res.status(400).send({
+			return res.status(500).send({
         data: null,
         message: error.message,
         status: RequestStateTypes.FAIL
@@ -20,7 +20,7 @@ router.post('/register', (req, res, next) => {
 		}
 		passport.authenticate('local', (authError: Error, user: UserType) => {
       if (authError) {
-        return res.status(400).send({
+        return res.status(401).send({
           data: null,
           message: authError.message,
           status: RequestStateTypes.FAIL
@@ -45,7 +45,7 @@ router.post('/login', (req, res, next) => {
   const { mobile_token, username }: { mobile_token?: string, username?: string } = req.query
   passport.authenticate('local', async (authError: Error, user: UserType) => {
     if (authError) {
-      return res.status(400).send({
+      return res.status(401).send({
         data: null,
         message: authError.message,
         status: RequestStateTypes.FAIL
@@ -80,6 +80,30 @@ router.post('/login', (req, res, next) => {
       })
     }
   })(req, res, next)
+})
+
+router.get('/users', async (_req, res) => {
+  await User.find({ username: { $exists: true } }, (dbError: Error, users: UserType[]) => {
+    if (dbError) {
+      return res.status(500).send({
+        data: null,
+        message: dbError.message,
+        status: RequestStateTypes.FAIL
+      })
+    }
+    const filteredUsers = users.map(user => (
+      {
+        id: user._id,
+        username: user.username,
+        mobile_token: user.mobile_token,
+      }
+    ))
+    return res.status(200).send({
+      data: filteredUsers,
+      message: null,
+      status: RequestStateTypes.SUCCESS
+    })
+  })
 })
 
 router.get('/logout', (req, res) => {
