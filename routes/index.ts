@@ -106,6 +106,35 @@ router.get('/users', async (_req, res) => {
   })
 })
 
+router.get('/user', async (req, res) => {
+  const { username }: { username?: string } = req.query
+  await User.findOne({ username }, (dbError: Error, user: UserType) => {
+    if (dbError) {
+      return res.status(500).send({
+        data: null,
+        message: dbError.message,
+        status: RequestStateTypes.FAIL
+      })
+    } else if (!user) {
+      return res.status(400).send({
+        data: null,
+        message: `No account with username ${username} found`,
+        status: RequestStateTypes.FAIL
+      })
+    }
+    const filteredUser = {
+      id: user._id,
+      username: user.username,
+      mobile_token: user.mobile_token,
+    }
+    return res.status(200).send({
+      data: filteredUser,
+      message: null,
+      status: RequestStateTypes.SUCCESS
+    })
+  })
+})
+
 router.get('/logout', (req, res) => {
 	req.logout()
 	res.status(200).send({
