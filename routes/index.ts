@@ -35,4 +35,22 @@ router.post('/register', (req, res, next) => {
 	})
 })
 
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (authError: Error, user: UserType) => {
+    if (authError) {
+      return res.status(400).send({
+        data: null,
+        message: authError.message,
+        status: 'fail'
+      })
+    } else if (!authError && !!user) {
+      return res.status(200).send({
+        data: user,
+        message: 'Authenticated',
+        status: 'success'
+      })
+    }
+  })(req, res, next)
+})
+
 export default router
