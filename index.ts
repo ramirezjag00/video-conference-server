@@ -11,7 +11,12 @@ const app = express()
 const LocalStrategy = passportLocal.Strategy
 const port = 3000
 
-mongoose.connect('mongodb://localhost/video_conference', { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true, useFindAndModify: false })
+mongoose.connect('mongodb://localhost/video_conference', {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false
+})
 
 app.use(session({
 	secret: 'MEOWOWOWOW',
