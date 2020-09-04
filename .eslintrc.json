@@ -15,7 +15,7 @@
     "arrow-spacing": 2,
     "eol-last": 2,
     "eslint-comments/no-unlimited-disable": 0,
-    "no-shadow": "warn",
+    "no-shadow": 0,
     "no-trailing-spaces": 2,
     "no-unused-vars": 2,
     "object-curly-spacing": [2, "always"],
