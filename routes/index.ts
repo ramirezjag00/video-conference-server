@@ -3,6 +3,7 @@ import passport from 'passport'
 
 import User from '../models/user'
 import UserType from '../types/User'
+import RequestStateTypes from '../types/UserRequest'
 
 const router = express.Router()
 
@@ -14,7 +15,7 @@ router.post('/register', (req, res, next) => {
 			return res.status(400).send({
         data: null,
         message: error.message,
-        status: 'fail'
+        status: RequestStateTypes.FAIL
       })
 		}
 		passport.authenticate('local', (authError: Error, user: UserType) => {
@@ -22,13 +23,18 @@ router.post('/register', (req, res, next) => {
         return res.status(400).send({
           data: null,
           message: authError.message,
-          status: 'fail'
+          status: RequestStateTypes.FAIL
         })
       } else if (!authError && !!user) {
+        const filteredUser = {
+          id: user._id,
+          username: user.username,
+          mobile_token: mobile_token || user.mobile_token,
+        }
         return res.status(200).send({
-          data: user,
+          data: filteredUser,
           message: 'Authenticated',
-          status: 'success'
+          status: RequestStateTypes.SUCCESS
         })
       }
     })(req, res, next)
@@ -36,18 +42,41 @@ router.post('/register', (req, res, next) => {
 })
 
 router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (authError: Error, user: UserType) => {
+  const { mobile_token, username }: { mobile_token?: string, username?: string } = req.query
+  passport.authenticate('local', async (authError: Error, user: UserType) => {
     if (authError) {
       return res.status(400).send({
         data: null,
         message: authError.message,
-        status: 'fail'
+        status: RequestStateTypes.FAIL
       })
     } else if (!authError && !!user) {
+      const filteredUser = {
+        id: user._id,
+        username: user.username,
+        mobile_token: mobile_token || user.mobile_token,
+      }
+      if (mobile_token) {
+        await User.findOneAndUpdate({ username }, { mobile_token }, { new: true, upsert: true }, (dbError: Error) => {
+          if (dbError) {
+            return res.status(500).send({
+              data: null,
+              message: dbError.message,
+              status: RequestStateTypes.FAIL
+            })
+          }
+        })
+        filteredUser
+        return res.status(200).send({
+          data: filteredUser ,
+          message: 'Authenticated',
+          status: RequestStateTypes.SUCCESS
+        })
+      }
       return res.status(200).send({
-        data: user,
+        data: filteredUser ,
         message: 'Authenticated',
-        status: 'success'
+        status: RequestStateTypes.SUCCESS
       })
     }
   })(req, res, next)
@@ -58,7 +87,7 @@ router.get('/logout', (req, res) => {
 	res.status(200).send({
     data: null,
     message: 'Logged Out',
-    status: 'success'
+    status: RequestStateTypes.SUCCESS
   })
 })
 
