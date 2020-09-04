@@ -90,6 +90,12 @@ router.get('/users', async (_req, res) => {
         message: dbError.message,
         status: RequestStateTypes.FAIL
       })
+    } else if (users.length === 0) {
+      return res.status(200).send({
+        data: [],
+        message: 'No users found',
+        status: RequestStateTypes.SUCCESS
+      })
     }
     const filteredUsers = users.map(user => (
       {
@@ -116,10 +122,10 @@ router.get('/user', async (req, res) => {
         status: RequestStateTypes.FAIL
       })
     } else if (!user) {
-      return res.status(400).send({
+      return res.status(200).send({
         data: null,
         message: `No account with username ${username} found`,
-        status: RequestStateTypes.FAIL
+        status: RequestStateTypes.SUCCESS
       })
     }
     const filteredUser = {
