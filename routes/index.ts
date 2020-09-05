@@ -64,11 +64,12 @@ router.post('/login', (req, res, next) => {
       req.login(user, async (error: Error) => {
         if (error) {
           return res.status(401).send({
-          data: null,
-          message: error.message,
-          status: RequestStateTypes.FAIL
-        })
+            data: null,
+            message: error.message,
+            status: RequestStateTypes.FAIL
+          })
         }
+
         const filteredUser = {
           id: user._id,
           username: user.username,
@@ -158,6 +159,28 @@ router.get('/user', async (req, res) => {
     })
   })
 })
+
+router.delete("/user", isLoggedIn, async (req, res) => {
+  const { username } = req.query
+  const user = await User.findByUsername((username as string), false)
+  User.findByIdAndRemove(user._id, (err: Error) => {
+		if(err){
+			return res.status(400).send({
+        data: null,
+        message: err.message,
+        status: RequestStateTypes.FAIL
+      })
+		} else {
+      req.logout()
+			return res.status(200).send({
+        data: null,
+        message: `Deleted account with username ${username}`,
+        status: RequestStateTypes.SUCCESS
+      })
+		}
+	})
+})
+
 
 router.get('/logout', (req, res) => {
 	req.logout()
