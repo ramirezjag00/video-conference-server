@@ -32,7 +32,7 @@ app.use(session({
   resave: false,
   proxy: true,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 2, secure: false, httpOnly: 
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 2, secure: false, httpOnly:
     true },
   unset: 'destroy',
   store: new MongoStore({ mongooseConnection: db, ttl: 2 * 24 * 60 * 60 }),
