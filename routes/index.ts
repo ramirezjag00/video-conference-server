@@ -4,6 +4,7 @@ import passport from 'passport'
 import User from '../models/user'
 import UserType from '../types/User'
 import RequestStateTypes from '../types/UserRequest'
+import isLoggedIn from '../middlware/isLoggedIn'
 
 const router = express.Router()
 
@@ -26,15 +27,24 @@ router.post('/register', (req, res, next) => {
           status: RequestStateTypes.FAIL
         })
       } else if (!authError && !!user) {
-        const filteredUser = {
-          id: user._id,
-          username: user.username,
-          mobile_token: mobile_token || user.mobile_token,
-        }
-        return res.status(200).send({
-          data: filteredUser,
-          message: 'Authenticated',
-          status: RequestStateTypes.SUCCESS
+        req.login(user, (err: Error) => {
+          if (err) {
+            return res.status(401).send({
+              data: null,
+              message: err.message,
+              status: RequestStateTypes.FAIL
+            })
+          }
+          const filteredUser = {
+            id: user._id,
+            username: user.username,
+            mobile_token: mobile_token || user.mobile_token,
+          }
+          return res.status(200).send({
+            data: filteredUser,
+            message: 'Authenticated',
+            status: RequestStateTypes.SUCCESS
+          })
         })
       }
     })(req, res, next)
@@ -51,32 +61,40 @@ router.post('/login', (req, res, next) => {
         status: RequestStateTypes.FAIL
       })
     } else if (!authError && !!user) {
-      const filteredUser = {
-        id: user._id,
-        username: user.username,
-        mobile_token: mobile_token || user.mobile_token,
-      }
-      if (mobile_token) {
-        await User.findOneAndUpdate({ username }, { mobile_token }, { new: true, upsert: true }, (dbError: Error) => {
-          if (dbError) {
-            return res.status(500).send({
-              data: null,
-              message: dbError.message,
-              status: RequestStateTypes.FAIL
-            })
-          }
+      req.login(user, async (error: Error) => {
+        if (error) {
+          return res.status(401).send({
+          data: null,
+          message: error.message,
+          status: RequestStateTypes.FAIL
         })
-        filteredUser
+        }
+        const filteredUser = {
+          id: user._id,
+          username: user.username,
+          mobile_token: mobile_token || user.mobile_token,
+        }
+        if (mobile_token) {
+          await User.findOneAndUpdate({ username }, { mobile_token }, { new: true, upsert: true }, (dbError: Error) => {
+            if (dbError) {
+              return res.status(500).send({
+                data: null,
+                message: dbError.message,
+                status: RequestStateTypes.FAIL
+              })
+            }
+          })
+          return res.status(200).send({
+            data: filteredUser ,
+            message: 'Authenticated',
+            status: RequestStateTypes.SUCCESS
+          })
+        }
         return res.status(200).send({
           data: filteredUser ,
           message: 'Authenticated',
           status: RequestStateTypes.SUCCESS
         })
-      }
-      return res.status(200).send({
-        data: filteredUser ,
-        message: 'Authenticated',
-        status: RequestStateTypes.SUCCESS
       })
     }
   })(req, res, next)
