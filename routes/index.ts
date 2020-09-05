@@ -160,6 +160,97 @@ router.get('/user', async (req, res) => {
   })
 })
 
+router.put('/user', isLoggedIn, async (req, res) => {
+  const { mobile_token, username, password, new_password }: { mobile_token?: string, username?: string, password?: string, new_password?: string } = req.query
+  if (mobile_token) {
+    await User.findOneAndUpdate({ username }, { mobile_token }, { new: true, upsert: true }, async (dbError: Error, user: UserType) => {
+      if (dbError) {
+        return res.status(500).send({
+          data: null,
+          message: dbError.message,
+          status: RequestStateTypes.FAIL
+        })
+      } else if (!user) {
+        return res.status(200).send({
+          data: null,
+          message: `No account with username ${username} found`,
+          status: RequestStateTypes.SUCCESS
+        })
+      }
+      try {
+        const filteredUser = {
+          id: user._id,
+          username: user.username,
+          mobile_token: user.mobile_token,
+        }
+        await user.schema.methods.changePassword(password, new_password, async (err: Error) => {
+          if (err) {
+            return res.status(500).send({
+              data: null,
+              message: err.message,
+              status: RequestStateTypes.FAIL
+            })
+          } else {
+            return res.status(200).send({
+              data: filteredUser ,
+              message: 'Password and mobile_token changed',
+              status: RequestStateTypes.SUCCESS
+            })
+          }
+        })
+      } catch (e) {
+        return res.status(400).send({
+          data: null,
+          message: e.message,
+          status: RequestStateTypes.FAIL
+        })
+      }
+    })
+  } else {
+    await User.findOne({ username }, async (dbError: Error, user: UserType) => {
+      if (dbError) {
+        return res.status(500).send({
+          data: null,
+          message: dbError.message,
+          status: RequestStateTypes.FAIL
+        })
+      } else if (!user) {
+        return res.status(200).send({
+          data: null,
+          message: `No account with username ${username} found`,
+          status: RequestStateTypes.SUCCESS
+        })
+      }
+      try {
+        await user.schema.methods.changePassword(password, new_password, (err: Error) => {
+          return res.status(500).send({
+            data: null,
+            message: err.message,
+            status: RequestStateTypes.FAIL
+          })
+        })
+        await user.save()
+        const filteredUser = {
+          id: user._id,
+          username: user.username,
+          mobile_token: user.mobile_token,
+        }
+        return res.status(200).send({
+          data: filteredUser,
+          message: 'Password changed',
+          status: RequestStateTypes.SUCCESS
+        })
+      } catch (e) {
+        return res.status(400).send({
+          data: null,
+          message: e.message,
+          status: RequestStateTypes.FAIL
+        })
+      }
+    })
+  }
+})
+
 router.delete("/user", isLoggedIn, async (req, res) => {
   const { username } = req.query
   const user = await User.findByUsername((username as string), false)
