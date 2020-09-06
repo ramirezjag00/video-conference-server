@@ -9,7 +9,8 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 
 import User from './models/user'
-import indexRoutes from './routes/index'
+import './models/room'
+import authRoutes from './routes/authRoutes'
 
 const app = express()
 const LocalStrategy = passportLocal.Strategy
@@ -52,7 +53,7 @@ app.use((req, res, next) => {
 
 app.use(cors())
 
-app.use('/', indexRoutes)
+app.use('/', authRoutes)
 
 app.listen(port, () => {
   console.log(`Video Conference Server started at http://localhost:${port}`)
